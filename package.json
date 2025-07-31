@@ -1,16 +1,36 @@
 {
   "name": "backendv1",
   "version": "1.0.0",
-  "description": "a backend  at chai aur code chaneel ",
+  "description": "this i show link",
   "keywords": [
     "javascript",
     "backend"
   ],
+  "homepage": "https://github.com/waahidulSami/backend#readme",
+  "bugs": {
+    "url": "https://github.com/waahidulSami/backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/waahidulSami/backend.git"
+  },
   "license": "ISC",
   "author": "sami",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "mongoose": "^8.17.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2"
   }
 }
