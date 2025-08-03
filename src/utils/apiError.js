@@ -2,7 +2,7 @@ class ApiError extends Error  {
     constructor(
         statusCode,
         message = "An error occurred",
-        error,
+        error = [] ,
         statck = ""
         
     ) {
@@ -22,3 +22,6 @@ class ApiError extends Error  {
         }
     }
 }
+
+
+export default ApiError;
