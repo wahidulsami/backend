@@ -9,8 +9,6 @@ const genrateAccessAndRefreshToken = async (userId) => {
     const user = await User.findById(userId);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
-console.log("Access token:", accessToken);
-console.log("Refresh token:", refreshToken);
 
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
@@ -119,7 +117,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const cokiesOptions = {
     httpOnly: true,
-  secure: false, // ⛔️ local এ false, production এ true
+  secure: false,
 
   };
 
