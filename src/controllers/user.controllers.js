@@ -210,106 +210,194 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-const changeCurrentPassword = asyncHandler(async (req ,  res) => {
+const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
-  const user = await User.findById(req.user?._id)
-const ispasswordCorrect = await user.ispasswordCorrect(oldPassword)
+  const user = await User.findById(req.user?._id);
+  const ispasswordCorrect = await user.ispasswordCorrect(oldPassword);
 
-if (ispasswordCorrect) {
-  throw new ApiError(400, " password  is  incorrect");
-}
+  if (!ispasswordCorrect) {
+    throw new ApiError(400, " password  is  incorrect");
+  }
 
-user.password = newPassword;
+  user.password = newPassword;
 
- await user.save({ validateBeforeSave: false });
- 
- return res.status(200)
- .json(new ApiResponse(200, {} , "Password changed successfully"))
-})
+  await user.save({ validateBeforeSave: false });
 
-const getCurentUser = asyncHandler(async (req, res) => {
-  return res.status(200)
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
     .json(new ApiResponse(200, req.user, "Current user fetched successfully"));
-})
+});
 
-const updateAccoutDetails = asyncHandler(async(req , res) => {
-  const { fullname , email  } = req.body;
+const updateAccoutDetails = asyncHandler(async (req, res) => {
+  const { fullname, email } = req.body;
 
   if (!fullname || !email) {
     throw new ApiError(400, "Fullname and email are required");
   }
 
- const user  = await User.findByIdAndUpdate(req.user?._id,
-   {
-    $set:{
-      fullname,
-      email:email
-    }
-  },
-  {new: true}).select("-password");
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullname,
+        email: email,
+      },
+    },
+    { new: true }
+  ).select("-password");
 
-  return res.status(200)
-  .json(new ApiResponse(200, user, "Account details updated successfully"))
-})
-
-
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+// TODO >>
 const updateUserAvatar = asyncHandler(async (req, res) => {
- const avatarLocalpath =  req.file?.path
+  const avatarLocalpath = req.file?.path;
 
- if (!avatarLocalpath) {
-  throw new ApiError(400, "Avatar is required");
- }
+// TODO delte old avatar from cloudinary
+
+  if (!avatarLocalpath) {
+    throw new ApiError(400, "Avatar is required");
+  }
   const avatar = await uploadCloudinary(avatarLocalpath);
   if (!avatar) {
     throw new ApiError(500, "Failed to upload avatar to Cloudinary");
   }
 
-  const user = await User.findByIdAndUpdate(req.user?._id,
-     {
-    $set: {
-      avatar: avatar.url
-    }
-  },
-{ new: true }).select("-password");
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
 
-return res.status(200)
-.json(new ApiResponse(200, user, "Avatar updated successfully"))
- 
-})
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar updated successfully"));
+});
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
- const coverImageLocalpath =  req.file?.path
+  const coverImageLocalpath = req.file?.path;
 
- if (!coverImageLocalpath) {
-  throw new ApiError(400, "Avatar is required");
- }
+  // TODO delte old coverImage from cloudinary
+
+  if (!coverImageLocalpath) {
+    throw new ApiError(400, "Avatar is required");
+  }
   const coverImage = await uploadCloudinary(coverImageLocalpath);
   if (!coverImage) {
     throw new ApiError(500, "Failed to upload cover to Cloudinary");
   }
 
-  const user = await User.findByIdAndUpdate(req.user?._id,
-     {
-    $set: {
-      coverImage: coverImage.url
-    }
-  },
-{ new: true }).select("-password");
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        coverImage: coverImage.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
 
-return res.status(200)
-.json(new ApiResponse(200, user, "coverImage updated successfully"))
- 
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "coverImage updated successfully"));
+});
+
+// todo end
+
+const getCurrentChannel = asyncHandler(async (req, res) => {
+  const {username} = req.params;
+  if (!username) {
+    throw new ApiError(400, "username is required");
+  }
+  const channel =   await User.aggregate([
+    {
+      $match: {
+        username: username.trim().toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      }
+    }, 
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribedTo",
+      }
+    }, {
+      $addFields: {
+        SubscriberCount: { $size: "$subscribers" },
+        channelSubscribedToCount: { $size: "$subscribedTo" },
+      } ,
+      isSubscribed: {
+        $cond: {
+          if:{$in: [req.user?._id, "$subscribers.subscriber"]},
+          then: true,
+          else: false,
+        }
+      }
+    }, 
+    {
+      $project: {
+        fullname: 1 ,
+        username: 1,
+        SubscriberCount: 1,
+        channelSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar:1,
+        coverImage:1
+      }
+    }
+  ])
+  console.log(channel);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "Channel not found");
+  }
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200, channel[0], "Current channel fetched successfully"));
+})
+
+const getWatchhistory = asyncHandler(async (req, res) => {
+
+  const user = await User.aggregate([
+    {
+      $match:{
+        _id: req.user?._id
+      }
+    }
+  ])
 })
 
 export {
-   registerUser,
-    loginUser,
-    logoutUser,
-    refreshAccessToken,
-    changeCurrentPassword,
-    getCurentUser,
-    updateAccoutDetails,
-    updateUserAvatar,
-    updateUserCoverImage
-   };
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccoutDetails,
+  updateUserAvatar,
+  updateUserCoverImage,
+  getCurrentChannel
+};
