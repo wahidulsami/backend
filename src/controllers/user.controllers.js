@@ -380,7 +380,7 @@ const getCurrentChannel = asyncHandler(async (req, res) => {
 
 const getWatchhistory = asyncHandler(async (req, res) => {
 
-  const user = await User.aggregate([
+  const user = await  User.aggregate([
     {
       $match:{
         _id: req.user?._id
