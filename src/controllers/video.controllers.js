@@ -32,30 +32,41 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
+  
+if (!title || !description) {
+  throw new ApiError(400, "Title and description are required");
+}
 
-  const isUser = req.user._id;
-  if (!isUser) {
-    throw new ApiError(404, "user not found");
-  }
   const user = await User.findById(req.user._id);
-
   if (!user) {
     throw new ApiError(404, "user not found");
   }
+console.log('Request body:', req.body);
+console.log('Request files:', req.files);
 
-  const Filevideopath = req.file?.path;
+  const Filevideopath = req.files?.video?.[0]?.path;
+  const thumbnailPath = req.files?.thumbnail?.[0]?.path;
+  console.log("Files received:", req.files);
   if (!Filevideopath) {
     throw new ApiError(404, "video is required");
   }
+  if (!thumbnailPath) {
+    throw new ApiError(404, "thumbnail is required");
+  }
 
   const uploadVideo = await uploadCloudinary(Filevideopath);
+  const uploadThumbnail = await uploadCloudinary(thumbnailPath);
+
   const duration_video = uploadVideo.duration.toFixed(0);
+
   const video = await Video.create({
     title,
     description,
     videoFile: uploadVideo.url,
+    thumbnail: uploadThumbnail.url,
     owner: user._id,
     duration: duration_video,
+    isPublished: false,
   });
 
   if (!video) {
@@ -66,6 +77,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, "publish video successfully", video));
 });
+
+
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -113,22 +126,82 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  //    console.log(videoId);
 
+  // If you are uploading a file for thumbnail
+  const thumbnailPath = req.file?.path || req.body.thumbnail;
+
+  const { title, description } = req.body;
+
+  if (!title?.trim() || !description?.trim() || !thumbnailPath?.trim()) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(404, "Invalid video ID");
+  }
+
+  const updatedVideo = await Video.findByIdAndUpdate(
+    videoId,
+    { title, description, thumbnail: thumbnailPath },
+    { new: true }
+  );
+
+  if (!updatedVideo) {
+    throw new ApiError(404, "Failed to update video");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, "Video details updated successfully", updatedVideo)
+  );
 });
+
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const {title, description , thumbnail} = req.body
 
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404 , "user not found")
+    throw new ApiError(404, "Video not found");
   }
 
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  // Check ownership before deletion
+  if (video.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not authorized to delete this video");
+  }
+
+  await video.deleteOne();
+
+  return res.status(200).json({
+    success: true,
+    message: "Video deleted successfully",
+    video,
+  });
 });
+
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(404, "video not found");
+  }
+
+  const video = await Video.findById(videoId)
+  if (!videoId) {
+     throw new ApiError(404, " video not found");
+  }
+
+    video.isPublished = !video.isPublished;
+
+    await video.save()
+     return res.status(200).json({
+    success: true,
+    message: `Video is now ${video.isPublished ? "published" : "unpublished"}`,
+    video,})
 });
 
 export {
