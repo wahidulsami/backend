@@ -13,7 +13,7 @@ import { verifyJWT } from "../middlewares/auth.middlewares.js";
 const router = Router();
 
 // Public routes
-router.get("/", getAllVideos);
+router.get("/getAllVideos", getAllVideos);
 router.get("/:videoId", getVideoById);
 
 
@@ -30,7 +30,7 @@ router.post(
 );
 
 router.patch("/update-video/:videoId", upload.single("thumbnail"), updateVideo);
-router.delete("/:videoId", deleteVideo);
+router.delete("/deleteVideo/:videoId", deleteVideo);
 router.patch("/:videoId/toggle-publish", togglePublishStatus);
 
 export default router;

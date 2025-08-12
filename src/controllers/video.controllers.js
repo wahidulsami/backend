@@ -9,9 +9,7 @@ import mongoose from "mongoose";
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    throw new ApiError(400, "Invalid user Id");
-  }
+  
   const aggregate = Video.aggregate([
     {
       $sort: {
@@ -121,40 +119,51 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
     return res
     .status(200)
-    .json(new ApiResponse(200, "video fetched successfully...", video));
+    .json(new ApiResponse(200,  "video fetched successfully..." , video ));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const {title , description }= req.body
+  //    console.log(videoId);
 
-  // If you are uploading a file for thumbnail
-  const thumbnailPath = req.file?.path || req.body.thumbnail;
-
-  const { title, description } = req.body;
-
-  if (!title?.trim() || !description?.trim() || !thumbnailPath?.trim()) {
-    throw new ApiError(400, "All fields are required");
-  }
 
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404, "Invalid video ID");
+    throw new ApiError(404 , 
+      "invalid video id ")
   }
 
-  const updatedVideo = await Video.findByIdAndUpdate(
-    videoId,
-    { title, description, thumbnail: thumbnailPath },
+let thumbnailURL;
+if (req.file?.path) {
+  const uploadedThumbnail = await uploadCloudinary(req.file.path);
+  thumbnailURL = uploadedThumbnail.secure_url
+}
+
+
+  
+  const updateVideo = await Video.findByIdAndUpdate( 
+      videoId,
+    {
+      title: title?.trim(),
+      description: description?.trim(),
+      ...(thumbnailURL && { thumbnail: thumbnailURL }) 
+    },
     { new: true }
-  );
+  )
 
-  if (!updatedVideo) {
-    throw new ApiError(404, "Failed to update video");
+  if (!updateVideo) {
+    throw new ApiError(
+      404, 
+      "failed to update video"
+    )
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, "Video details updated successfully", updatedVideo)
-  );
-});
+  return res 
+  .status(200)
+  .json( new ApiResponse(200, "Video details updated successfully", updateVideo))
 
+
+});
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
