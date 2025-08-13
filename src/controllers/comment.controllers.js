@@ -14,7 +14,7 @@ const getVideoComments = asyncHandler(async (req , res) => {
 
     const commentQuery = Comment.aggregate([
         {
-            $match: {video: new mongoose.Types.ObjectId(videoId)}
+            $match: { video: videoId }
         },{
             $sort: {createdAt: -1}
         },
@@ -145,7 +145,6 @@ const deleteComments = asyncHandler(async (req , res )=> {
 export {
     getVideoComments,
     addComment,
-    updateComment,
     updateComment,
     deleteComments
 }

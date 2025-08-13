@@ -7,10 +7,21 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+ const { 
+    page = 1, 
+    limit = 10, 
+    query = "", 
+    sortBy = "createdAt", 
+    sortType = "desc", 
+    userId 
+  } = req.query;
 
-  
+   const match = {};
+  if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+    match.owner = new mongoose.Types.ObjectId(userId);
+  }
   const aggregate = Video.aggregate([
+    {$match:match},
     {
       $sort: {
         [sortBy]: sortType === "asc" ? 1 : -1,
@@ -34,17 +45,15 @@ const publishAVideo = asyncHandler(async (req, res) => {
 if (!title || !description) {
   throw new ApiError(400, "Title and description are required");
 }
-
   const user = await User.findById(req.user._id);
   if (!user) {
     throw new ApiError(404, "user not found");
   }
-console.log('Request body:', req.body);
-console.log('Request files:', req.files);
+
 
   const Filevideopath = req.files?.video?.[0]?.path;
   const thumbnailPath = req.files?.thumbnail?.[0]?.path;
-  console.log("Files received:", req.files);
+
   if (!Filevideopath) {
     throw new ApiError(404, "video is required");
   }
@@ -75,8 +84,6 @@ console.log('Request files:', req.files);
     .status(201)
     .json(new ApiResponse(201, "publish video successfully", video));
 });
-
-
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -125,7 +132,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const {title , description }= req.body
-  //    console.log(videoId);
+
 
 
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
@@ -191,7 +198,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
     video,
   });
 });
-
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
