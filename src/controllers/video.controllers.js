@@ -7,21 +7,21 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
- const { 
-    page = 1, 
-    limit = 10, 
-    query = "", 
-    sortBy = "createdAt", 
-    sortType = "desc", 
-    userId 
+  const {
+    page = 1,
+    limit = 10,
+    query = "",
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
   } = req.query;
 
-   const match = {};
+  const match = {};
   if (userId && mongoose.Types.ObjectId.isValid(userId)) {
     match.owner = new mongoose.Types.ObjectId(userId);
   }
   const aggregate = Video.aggregate([
-    {$match:match},
+    { $match: match },
     {
       $sort: {
         [sortBy]: sortType === "asc" ? 1 : -1,
@@ -41,15 +41,14 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  
-if (!title || !description) {
-  throw new ApiError(400, "Title and description are required");
-}
+
+  if (!title || !description) {
+    throw new ApiError(400, "Title and description are required");
+  }
   const user = await User.findById(req.user._id);
   if (!user) {
     throw new ApiError(404, "user not found");
   }
-
 
   const Filevideopath = req.files?.video?.[0]?.path;
   const thumbnailPath = req.files?.thumbnail?.[0]?.path;
@@ -87,7 +86,7 @@ if (!title || !description) {
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-    if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
+  if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(404, "user not found");
   }
 
@@ -118,58 +117,48 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  if (!video) {
-    throw new ApiError(
-        404,
-        "video not found"
-    )
+  if (!video.length) {
+    throw new ApiError(404, "video not found");
   }
-    return res
+
+  return res
     .status(200)
-    .json(new ApiResponse(200,  "video fetched successfully..." , video ));
+    .json(new ApiResponse(200, "video fetched successfully...", video));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const {title , description }= req.body
-
-
+  const { title, description } = req.body;
 
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404 , 
-      "invalid video id ")
+    throw new ApiError(404, "invalid video id ");
   }
 
-let thumbnailURL;
-if (req.file?.path) {
-  const uploadedThumbnail = await uploadCloudinary(req.file.path);
-  thumbnailURL = uploadedThumbnail.secure_url
-}
+  let thumbnailURL;
+  if (req.file?.path) {
+    const uploadedThumbnail = await uploadCloudinary(req.file.path);
+    thumbnailURL = uploadedThumbnail.secure_url;
+  }
 
-
-  
-  const updateVideo = await Video.findByIdAndUpdate( 
-      videoId,
+  const updateVideo = await Video.findByIdAndUpdate(
+    videoId,
     {
-      title: title?.trim(),
-      description: description?.trim(),
-      ...(thumbnailURL && { thumbnail: thumbnailURL }) 
+      ...(title && { title: title.trim() }),
+      ...(description && { description: description.trim() }),
+      ...(thumbnailURL && { thumbnail: thumbnailURL }),
     },
     { new: true }
-  )
+  );
 
   if (!updateVideo) {
-    throw new ApiError(
-      404, 
-      "failed to update video"
-    )
+    throw new ApiError(404, "failed to update video");
   }
 
-  return res 
-  .status(200)
-  .json( new ApiResponse(200, "Video details updated successfully", updateVideo))
-
-
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Video details updated successfully", updateVideo)
+    );
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
@@ -205,18 +194,21 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "video not found");
   }
 
-  const video = await Video.findById(videoId)
-  if (!videoId) {
-     throw new ApiError(404, " video not found");
-  }
+  const video = await Video.findById(videoId);
 
-    video.isPublished = !video.isPublished;
+  if (!video) {
+  throw new ApiError(404, "video not found");
+}
 
-    await video.save()
-     return res.status(200).json({
+
+  video.isPublished = !video.isPublished;
+
+  await video.save();
+  return res.status(200).json({
     success: true,
     message: `Video is now ${video.isPublished ? "published" : "unpublished"}`,
-    video,})
+    video,
+  });
 });
 
 export {
