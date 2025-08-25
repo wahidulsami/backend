@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const likeSchma = new mongoose.Schema(
+const tweetSchma = new mongoose.Schema(
   {
     content: {
       type: String,
@@ -14,4 +14,4 @@ const likeSchma = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const Like = mongoose.model("Like", likeSchma);
+export const Tweet = mongoose.model("Tweet", tweetSchma);
