@@ -31,6 +31,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // check for user creation
   // return res
 
+
   const { fullname, email, username, password } = req.body;
 
   if (
@@ -106,7 +107,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
   const ispasswordvalidate = await user.ispasswordCorrect(password);
   if (!ispasswordvalidate) {
-    throw new ApiError(401, "Invalid User credentials");
+    throw new ApiError(401, "Password is incorrect");
   }
 
   const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(
