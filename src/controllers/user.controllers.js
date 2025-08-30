@@ -21,23 +21,12 @@ const genrateAccessAndRefreshToken = async (userId) => {
   }
 };
 const registerUser = asyncHandler(async (req, res) => {
-  // get user details from frontend
-  // validation not empty
-  // check if user already exists: username, email
-  // check for images, check for avatar
-  // upload them to cloudinary, avatar
-  // create user object create entry in db
-  // remove password and refresh token field from response
-  // check for user creation
-  // return res
-
-
   const { fullname, email, username, password } = req.body;
 
   if (
     [fullname, email, username, password].some((field) => field?.trim() === "")
   ) {
-    throw new ApiError(400, "all fields is required");
+    return res.status(400).json({ success: false, message: "mising details register" });
   }
 
   const existUSER = await User.findOne({
@@ -45,26 +34,50 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (existUSER) {
-    throw new ApiError(409, "User already exists with this username or email");
+   return res.status(409).json({ success:
+     false,
+      message: "User already exists with this username or email" });
   }
 
-  const avatarLocalpath = req.files?.avatar?.[0]?.path;
+  const avatarLocalpath =  req.files?.avatar?.[0]?.path;
   const coverImageLocalpath = req.files?.coverImage?.[0]?.path;
 
-  if (!avatarLocalpath) {
-    throw new ApiError(400, "Avatar is required");
+ 
+
+
+   let avatar = null;
+  if (avatarLocalpath) {
+    avatar = await uploadCloudinary(avatarLocalpath);
+    if (!avatar) {
+     return res.status(500).json({
+       success: false,
+       message: "Failed to upload avatar to Cloudinary" });
+    }
   }
 
-  const avatar = await uploadCloudinary(avatarLocalpath);
-  const coverImage = await uploadCloudinary(coverImageLocalpath);
+  // Upload cover image if provided
+  let coverImage = null;
+  if (coverImageLocalpath) {
+    coverImage = await uploadCloudinary(coverImageLocalpath);
+    if (!coverImage) {
+           return res.status(500).json({
+       success: false,
+       message: "Failed to upload cover to Cloudinary" });
+    }
+    }
+  
+  
+  //  if (!avatarLocalpath) {
+  //     return res.status(400).json({ success: false, message: "Avatar is required" });
+  // }
 
-  if (!avatar) {
-    throw new ApiError(500, "Failed to upload avatar to Cloudinary");
-  }
+  // if (!avatar) {
+  //   throw new ApiError(500, "Failed to upload avatar to Cloudinary");
+  // }
 
   const user = await User.create({
     fullname,
-    avatar: avatar.url,
+    avatar: avatar ? avatar.url : "",
     coverImage: coverImage ? coverImage.url : "",
     email,
     password,
@@ -74,28 +87,43 @@ const registerUser = asyncHandler(async (req, res) => {
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
+    const cokiesOptions = {
+    httpOnly: true,
+    secure: false,
+  };
+  const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(user._id);
 
   if (!createdUser) {
-    throw new ApiError(500, "Failed to create user");
-  }
+         return res.status(500).json({
+       success: false,
+       message: "Failed to createdUser user" });
+    }
+  
 
   return res
-    .status(201)
-    .json(new ApiResponse(200, createdUser, "User created successfully"));
+   .status(201)
+    .cookie("accessToken", accessToken, cokiesOptions)
+    .cookie("refreshToken", refreshToken, cokiesOptions)
+    .json({
+      success: true,
+      message: "User registered successfully",
+      data: {
+        user: createdUser,
+        accessToken,
+        refreshToken,
+      },
+    });
 });
 
+
 const loginUser = asyncHandler(async (req, res) => {
-  // req.body >>> data
-  // username or email
-  // check if user exists
-  // validate email and password
-  // access token and refresh token generate
-  // send cokies
 
   const { email, username, password } = req.body;
 
   if (!username && !email) {
-    throw new ApiError(400, "Email and username are required");
+       return res.status(400).json({ success:
+     false,
+      message: "Email and username are required" });
   }
 
   const user = await User.findOne({
@@ -103,11 +131,15 @@ const loginUser = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    throw new ApiError(404, "User not found");
+           return res.status(404).json({ success:
+     false,
+      message: "User not found" });
   }
   const ispasswordvalidate = await user.ispasswordCorrect(password);
   if (!ispasswordvalidate) {
-    throw new ApiError(401, "Password is incorrect");
+           return res.status(401).json({ success:
+     false,
+      message: "Password is incorrect"});
   }
 
   const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(
@@ -123,21 +155,19 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: false,
   };
 
-  res
-    .status(200)
+  return res
+   .status(201)
     .cookie("accessToken", accessToken, cokiesOptions)
     .cookie("refreshToken", refreshToken, cokiesOptions)
-    .json(
-      new ApiResponse(
-        200,
-        {
-          user: logeedUser,
-          accessToken,
-          refreshToken,
-        },
-        "User logged in successfully"
-      )
-    );
+    .json({
+      success: true,
+      message: "User logged in successfully",
+      data: {
+        user: logeedUser,
+        accessToken,
+        refreshToken,
+      },
+    });
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -154,14 +184,18 @@ const logoutUser = asyncHandler(async (req, res) => {
   );
   const cokiesOptions = {
     httpOnly: true,
-    secure: false, // ⛔️ local এ false, production এ true
+    secure: false,
   };
 
-  res
+ return res
     .status(200)
     .clearCookie("accessToken", cokiesOptions)
     .clearCookie("refreshToken", cokiesOptions)
-    .json(new ApiResponse(200, null, "User logged out successfully"));
+    .json({
+      success: true,
+    
+      message: "User logout in successfully",
+    });;
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
