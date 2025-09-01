@@ -39,9 +39,21 @@ const UserSchema = new Schema(
         ref: "Video",
       },
     ],
+
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: true,
+    },
+    resetOtp: {
+      type: String,
+      default: "",
+    },
+      isOtpVerified:
+       { type: Boolean,
+         default: false },
+    resetOtpExpireAt: {
+      type: Number,
+      default: 0,
     },
     refreshToken: {
       type: String,
@@ -87,7 +99,5 @@ UserSchema.methods.generateRefreshToken = function () {
     }
   );
 };
-
-
 
 export const User = mongoose.model("User", UserSchema);
