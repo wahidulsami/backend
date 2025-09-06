@@ -374,13 +374,15 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password -refreshToken");
+  
   return res
     .status(200)
-    .json({ success: true, message: "Current user fetched successfully" });
+    .json({ success: true, data: user , message: "Current user fetched successfully" });
 });
 
-const updateAccoutDetails = asyncHandler(async (req, res) => {
-  const { fullname, email } = req.body;
+ const updateAccoutDetails = asyncHandler(async (req, res) => {
+  const { fullname, email, bio, social } = req.body;
 
   if (!fullname || !email) {
     return res
@@ -388,20 +390,28 @@ const updateAccoutDetails = asyncHandler(async (req, res) => {
       .json({ success: false, message: "Fullname and email are required" });
   }
 
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set: {
-        fullname,
-        email: email,
-      },
+const user = await User.findByIdAndUpdate(
+  req.user?._id,
+  {
+    $set: {
+      fullname,
+      email,
+      bio: bio || "",
+      "social.facebook": social?.facebook || "",
+      "social.twitter": social?.twitter || "",
+      "social.linkedin": social?.linkedin || "",
+      "social.github": social?.github || "",
     },
-    { new: true }
-  ).select("-password");
+  },
+  { new: true }
+).select("-password");
 
-  return res
-    .status(200)
-    .json({ success: true, message: "Account details updated successfully" });
+
+  return res.status(200).json({
+    success: true,
+    message: "Account details updated successfully",
+    user,
+  });
 });
 // TODO >>
 const updateUserAvatar = asyncHandler(async (req, res) => {
