@@ -30,12 +30,14 @@ const UserSchema = new Schema(
     type: String,
     default: "",
   },
-  social: {
-    facebook: { type: String, default: "" },
-    twitter: { type: String, default: "" },
-    linkedin: { type: String, default: "" },
-    github: { type: String, default: "" },
-  },
+social: {
+  url: { type: String, default: "" },
+  facebook: { type: String, default: "" },
+  twitter: { type: String, default: "" },
+  linkedin: { type: String, default: "" },
+  instagram: { type: String, default: "" },
+},
+
     avatar: {
       type: String,
       // required:true

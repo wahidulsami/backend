@@ -7,7 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const getVideoComments = asyncHandler(async (req , res) => {
     const {videoId} = req.params
     const {page = 1 , limit =10} = req.query
-    // if valid video id
+
     if(!videoId ||  !mongoose.Types.ObjectId.isValid(videoId) ){
         throw new ApiError( 400 , "invalid  video Id")
     }

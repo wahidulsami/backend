@@ -1,9 +1,7 @@
 import { User } from "../models/User.model.js";
 import { Video } from "../models/Video.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
 import { uploadCloudinary } from "../utils/cloudnary.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -34,30 +32,57 @@ const getAllVideos = asyncHandler(async (req, res) => {
     page: parseInt(page),
   });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, fetchedVideos, "videos fetch successfully"));
+  return res.status(200).json({
+    statusCode: 200,
+    success: true,
+    message: "Videos fetched successfully",
+    data: fetchedVideos,
+  });
+
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
+console.log(req.body);  // title, description
+console.log(req.files); // video, thumbnail
 
   if (!title || !description) {
-    throw new ApiError(400, "Title and description are required");
+      return res.status(400).json({
+      statusCode: 400,
+      success: false,
+      message: "Title and description are required",
+    });
   }
   const user = await User.findById(req.user._id);
   if (!user) {
-    throw new ApiError(404, "user not found");
+
+        return res.status(404).json({
+      statusCode: 404,
+      success: false,
+      message: "User not found",
+    });
   }
 
   const Filevideopath = req.files?.video?.[0]?.path;
   const thumbnailPath = req.files?.thumbnail?.[0]?.path;
 
   if (!Filevideopath) {
-    throw new ApiError(404, "video is required");
+    
+          return res
+      .status(400)
+      .json({ 
+            statusCode: 400,
+        success:false,
+      
+          message: "video is required" });
   }
   if (!thumbnailPath) {
-    throw new ApiError(404, "thumbnail is required");
+        return res
+      .status(404)
+      .json({ 
+           statusCode: 400,
+        success: false,
+         message: "thumbnail is required" });
   }
 
   const uploadVideo = await uploadCloudinary(Filevideopath);
@@ -76,18 +101,30 @@ const publishAVideo = asyncHandler(async (req, res) => {
   });
 
   if (!video) {
-    throw new ApiError(404, "failed to publish");
+            return res
+      .status(404)
+      .json({ 
+        statusCode: 404,
+        success: false,
+         message: "failed to publish" });
   }
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, "publish video successfully", video));
+  return res.status(201).json({
+    statusCode: 201,
+    success: true,
+    message: "Video published successfully",
+    data: video,
+  });
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404, "user not found");
+              return res.status(400).json({
+      statusCode: 400,
+      success: false,
+      message: "Invalid video id",
+    });
   }
 
   const video = await Video.aggregate([
@@ -118,12 +155,20 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
   ]);
   if (!video.length) {
-    throw new ApiError(404, "video not found");
+           return res.status(404).json({
+      statusCode: 404,
+      success: false,
+      message: "Video not found",
+    });
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, "video fetched successfully...", video));
+
+   return res.status(200).json({
+    statusCode: 200,
+    success: true,
+    message: "Video fetched successfully",
+    data: video[0],
+  });
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
@@ -131,7 +176,11 @@ const updateVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404, "invalid video id ");
+   return res.status(400).json({
+      statusCode: 400,
+      success: false,
+      message: "Invalid video id",
+    });
   }
 
   let thumbnailURL;
@@ -151,63 +200,95 @@ const updateVideo = asyncHandler(async (req, res) => {
   );
 
   if (!updateVideo) {
-    throw new ApiError(404, "failed to update video");
+          return res.status(404).json({
+      statusCode: 404,
+      success: false,
+      message: "Failed to update video",
+    });
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, "Video details updated successfully", updateVideo)
-    );
+  return res.status(200).json({
+    statusCode: 200,
+    success: true,
+    message: "Video updated successfully",
+    data: updateVideo,
+  });
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404, "Video not found");
+    return res.status(400).json({
+      statusCode: 400,
+      success: false,
+      message: "Invalid video id",
+    });
   }
 
   const video = await Video.findById(videoId);
 
   if (!video) {
-    throw new ApiError(404, "Video not found");
+
+   return res.status(404).json({
+      statusCode: 404,
+      success: false,
+      message: "Video not found",
+    });
   }
 
   // Check ownership before deletion
   if (video.owner.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, "You are not authorized to delete this video");
+    
+    return res.status(403).json({
+      statusCode: 403,
+      success: false,
+      message: "You are not authorized to delete this video",
+    });
+      
+
   }
 
   await video.deleteOne();
 
   return res.status(200).json({
+    statusCode: 200,
     success: true,
     message: "Video deleted successfully",
-    video,
+    data: video,
   });
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(404, "video not found");
+
+    return res.status(400).json({
+      statusCode: 400,
+      success: false,
+      message: "Invalid video id",
+    });
   }
 
   const video = await Video.findById(videoId);
 
   if (!video) {
-  throw new ApiError(404, "video not found");
+   return res.status(404).json({
+      statusCode: 404,
+      success: false,
+      message: "Video not found",
+    });
 }
 
 
   video.isPublished = !video.isPublished;
 
   await video.save();
-  return res.status(200).json({
+ return res.status(200).json({
+    statusCode: 200,
     success: true,
     message: `Video is now ${video.isPublished ? "published" : "unpublished"}`,
-    video,
+    data: video,
   });
 });
 

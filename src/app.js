@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -24,8 +23,6 @@ app.use(
   })
 );
 
-
-
 app.use(express.static("public"));
 
 app.use(cookieParser());
@@ -43,7 +40,7 @@ import tweetRouter from "./routes/tweet.routes.js";
 // routes use
 
 app.use("/api/v1/users", userRouter);
-app.use("/api/v1/", videoRouter);
+app.use("/api/v1/video", videoRouter);
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);

@@ -105,7 +105,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, cokiesOptions)
     .json({
       success: true,
-      message: "User registered successfully",
+      message: "registered successfully",
       data: {
         user: createdUser,
         accessToken,
@@ -381,38 +381,33 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json({ success: true, data: user , message: "Current user fetched successfully" });
 });
 
- const updateAccoutDetails = asyncHandler(async (req, res) => {
+const updateAccoutDetails = asyncHandler(async (req, res) => {
   const { fullname, email, bio, social } = req.body;
 
   if (!fullname || !email) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Fullname and email are required" });
+    return res.status(400).json({ success: false, message: "Fullname and email required" });
   }
 
-const user = await User.findByIdAndUpdate(
-  req.user?._id,
-  {
-    $set: {
-      fullname,
-      email,
-      bio: bio || "",
-      "social.facebook": social?.facebook || "",
-      "social.twitter": social?.twitter || "",
-      "social.linkedin": social?.linkedin || "",
-      "social.github": social?.github || "",
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        fullname,
+        email,
+        bio: bio || "",
+        "social.url": social?.url || "",
+        "social.facebook": social?.facebook || "",
+        "social.twitter": social?.twitter || "",
+        "social.linkedin": social?.linkedin || "",
+        "social.instagram": social?.instagram || ""
+      },
     },
-  },
-  { new: true }
-).select("-password");
+    { new: true }
+  );
 
-
-  return res.status(200).json({
-    success: true,
-    message: "Account details updated successfully",
-    user,
-  });
+  res.status(200).json({ success: true, message: "Profile updated", user });
 });
+
 // TODO >>
 const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatarLocalpath = req.file?.path;
