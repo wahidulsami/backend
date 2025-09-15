@@ -18,8 +18,37 @@ const getAllVideos = asyncHandler(async (req, res) => {
   if (userId && mongoose.Types.ObjectId.isValid(userId)) {
     match.owner = new mongoose.Types.ObjectId(userId);
   }
+
   const aggregate = Video.aggregate([
     { $match: match },
+
+    // join with User collection
+    {
+      $lookup: {
+        from: "users", // collection name in MongoDB
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    { $unwind: "$owner" }, // convert array → object
+
+    // optional: only project needed fields from user
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        thumbnail: 1,
+        duration: 1,
+        views: 1,
+        createdAt: 1,
+        "owner._id": 1,
+        "owner.fullname": 1,
+        "owner.username": 1,
+        "owner.avatar": 1,
+      },
+    },
+
     {
       $sort: {
         [sortBy]: sortType === "asc" ? 1 : -1,
@@ -38,7 +67,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     message: "Videos fetched successfully",
     data: fetchedVideos,
   });
-
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -144,6 +172,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $project: {
+        owner:"$userDetails._id",
         username: "$userDetails.username",
         thumbnail: 1,
         description: 1,
@@ -151,6 +180,8 @@ const getVideoById = asyncHandler(async (req, res) => {
         views: 1,
         duration: 1,
         videoFile: 1,
+      createdAt: 1,   
+  updatedAt: 1,   
       },
     },
   ]);
