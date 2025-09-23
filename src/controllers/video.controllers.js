@@ -22,18 +22,17 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const aggregate = Video.aggregate([
     { $match: match },
 
-    // join with User collection
+  
     {
       $lookup: {
-        from: "users", // collection name in MongoDB
+        from: "users", 
         localField: "owner",
         foreignField: "_id",
         as: "owner",
       },
     },
-    { $unwind: "$owner" }, // convert array → object
+    { $unwind: "$owner" }, 
 
-    // optional: only project needed fields from user
     {
       $project: {
         title: 1,
@@ -154,6 +153,7 @@ const getVideoById = asyncHandler(async (req, res) => {
       message: "Invalid video id",
     });
   }
+    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
 
   const video = await Video.aggregate([
     {
@@ -170,20 +170,25 @@ const getVideoById = asyncHandler(async (req, res) => {
     {
       $unwind: "$userDetails",
     },
-    {
-      $project: {
-        owner:"$userDetails._id",
-        username: "$userDetails.username",
-        thumbnail: 1,
-        description: 1,
-        title: 1,
-        views: 1,
-        duration: 1,
-        videoFile: 1,
-      createdAt: 1,   
-  updatedAt: 1,   
-      },
+  {
+  $project: {
+    title: 1,
+    description: 1,
+    thumbnail: 1,
+    duration: 1,
+    views: 1,
+    videoFile: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    owner: {
+      _id: "$userDetails._id",
+      fullname: "$userDetails.fullname",
+      username: "$userDetails.username",
+      avatar: "$userDetails.avatar",
     },
+  },
+}
+
   ]);
   if (!video.length) {
            return res.status(404).json({

@@ -19,7 +19,10 @@ const genrateAccessAndRefreshToken = async (userId) => {
 
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(500, "something went wrong while generating tokens");
+res.status(error.statusCode || 500).json({
+      success: false,
+      message: "something went wrong while generating tokens",
+    });
   }
 };
 const registerUser = asyncHandler(async (req, res) => {
@@ -309,7 +312,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     req.cookies.refreshToken || req.body.refreshToken;
 
   if (!incomingRefreshToken) {
-    throw new ApiError(401, "unauthorized request");
+    return res.status(404).json({success:false , message:"Refresh token not provided"})
+            
   }
 
   try {
@@ -320,17 +324,23 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const user = await User.findById(decodedToken?._id);
     if (!user) {
-      throw new ApiError(404, "User not found");
+     
+    return res.status(404).json({success:false , message:"User not found"})
     }
 
     if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Invalid refresh token");
+     
+    return res.status(401).json({success:false , message:"Invalid refresh token"})
+
     }
 
-    const cokiesOptions = {
-      httpOnly: true,
-      secure: false, // ⛔️ local এ false, production এ true
-    };
+ 
+  const cokiesOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // true in prod
+    sameSite: "Strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
 
     const { accessToken, newRefreshToken } = await genrateAccessAndRefreshToken(
       user._id
@@ -340,13 +350,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .status(200)
       .cookie("accessToken", accessToken, cokiesOptions)
       .cookie("refreshToken", newRefreshToken, cokiesOptions)
-      .json(
-        new ApiResponse(
-          200,
-          { accessToken, newRefreshToken },
-          "Tokens refreshed successfully"
-        )
-      );
+      .json({
+  success: true,
+  message: "Tokens refreshed successfully",
+  accessToken ,
+  refreshToken: newRefreshToken
+});
+
   } catch (error) {
     return next(new ApiError(401, error?.message || "Invalid refresh token"));
   }
