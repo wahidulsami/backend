@@ -4,6 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadCloudinary } from "../utils/cloudnary.js";
 import mongoose from "mongoose";
 
+import { Like } from "../models/Like.model.js";
+
 const getAllVideos = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -146,19 +148,17 @@ console.log(req.files); // video, thumbnail
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const userId = req.user ? req.user._id : null;
+
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-              return res.status(400).json({
-      statusCode: 400,
-      success: false,
-      message: "Invalid video id",
-    });
+    return res.status(400).json({ success: false, message: "Invalid video id" });
   }
-    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
+
+  // increment views
+  await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
 
   const video = await Video.aggregate([
-    {
-      $match: { _id: new mongoose.Types.ObjectId(videoId) },
-    },
+    { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
     {
       $lookup: {
         from: "users",
@@ -167,45 +167,49 @@ const getVideoById = asyncHandler(async (req, res) => {
         as: "userDetails",
       },
     },
+    { $unwind: "$userDetails" },
     {
-      $unwind: "$userDetails",
+      $project: {
+        title: 1,
+        description: 1,
+        thumbnail: 1,
+        duration: 1,
+        views: 1,
+        videoFile: 1,
+        likesCount: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        owner: {
+          _id: "$userDetails._id",
+          fullname: "$userDetails.fullname",
+          username: "$userDetails.username",
+          avatar: "$userDetails.avatar",
+        },
+      },
     },
-  {
-  $project: {
-    title: 1,
-    description: 1,
-    thumbnail: 1,
-    duration: 1,
-    views: 1,
-    videoFile: 1,
-    createdAt: 1,
-    updatedAt: 1,
-    owner: {
-      _id: "$userDetails._id",
-      fullname: "$userDetails.fullname",
-      username: "$userDetails.username",
-      avatar: "$userDetails.avatar",
-    },
-  },
-}
-
   ]);
+
   if (!video.length) {
-           return res.status(404).json({
-      statusCode: 404,
-      success: false,
-      message: "Video not found",
-    });
+    return res.status(404).json({ success: false, message: "Video not found" });
   }
 
+  // Check if user liked
+  let isLiked = false;
+  if (userId) {
+    const like = await Like.findOne({ video: videoId, likedBy: userId });
+    isLiked = !!like;
+  }
 
-   return res.status(200).json({
-    statusCode: 200,
+  return res.status(200).json({
     success: true,
     message: "Video fetched successfully",
-    data: video[0],
+    data: {
+      ...video[0],
+      liked: isLiked,
+    },
   });
 });
+
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;

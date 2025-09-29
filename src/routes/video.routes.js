@@ -9,16 +9,16 @@ import {
 } from "../controllers/video.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
-
+import { optionalJWT } from "../middlewares/optional.middlewares.js";
 const router = Router();
-
 // Public routes
 router.get("/getAllVideos", getAllVideos);
-router.get("/:videoId", getVideoById);
+router.get("/:videoId", optionalJWT , getVideoById);
 
 
 // Protect routes below with JWT verification middleware
 router.use(verifyJWT);
+
 
 router.post(
   "/upload-video",

@@ -3,35 +3,62 @@ import { Like } from "../models/Like.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { Video } from "../models/Video.model.js";
+
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const userId = req.user._id;
+
   if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-   return res.status(400).json({ success: false, message: "Invalid video Id" });
+    return res.status(400).json({ success: false, message: "Invalid video Id" });
   }
 
-  const existingLike = await Like.findOne({
-    video: videoId,
-    likedBy: userId,
-  });
+
+  const videoExists = await Video.findById(videoId).select("_id likesCount");
+  if (!videoExists) {
+    return res.status(404).json({ success: false, message: "Video not found" });
+  }
+
+
+  const existingLike = await Like.findOne({ video: videoId, likedBy: userId }).lean();
+
+  let liked;
+  let updated;
 
   if (existingLike) {
-    await Like.findByIdAndDelete(existingLike._id);
-   return res.status(200).json({
-  success: true,
-  message: "Video unliked successfully",
-  data: existingLike,
-});
+    await Like.deleteOne({ _id: existingLike._id });
 
+    updated = await Video.findByIdAndUpdate(
+      videoId,
+      { $inc: { likesCount: -1 } },
+      { new: true, projection: { likesCount: 1 } }
+    );
+
+    liked = false;
+  } else {
+    await Like.create({ video: videoId, likedBy: userId });
+
+    updated = await Video.findByIdAndUpdate(
+      videoId,
+      { $inc: { likesCount: 1 } },
+      { new: true, projection: { likesCount: 1 } }
+    );
+
+    liked = true;
   }
 
-  const newLike = await Like.create({ video: videoId, likedBy: userId });
-return res.status(200).json({
-  success: true,
-  message: "Tweet liked successfully",
-  data: newLike,
-});
+  // Safety check (never negative)
+  if (updated && updated.likesCount < 0) {
+    updated.likesCount = 0;
+    await updated.save();
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: liked ? "Video liked successfully" : "Video unliked successfully",
+    data: { videoId, liked, likesCount: updated.likesCount },
+  });
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
@@ -141,4 +168,9 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     );
 });
 
-export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
+export {
+  toggleCommentLike,
+  toggleTweetLike,
+  toggleVideoLike,
+  getLikedVideos
+ };
