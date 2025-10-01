@@ -108,7 +108,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, cokiesOptions)
     .json({
       success: true,
-      message: "registered successfully",
+      message: "Account created successfully 🎉",
       data: {
         user: createdUser,
         accessToken,
@@ -159,7 +159,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, cokiesOptions)
     .json({
       success: true,
-      message: "User logged in successfully",
+      message: " logged in successfully",
       data: {
         user: logeedUser,
         accessToken,
