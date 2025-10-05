@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import {
-    getSubscribedChannels,
-    getUserChannelSubscribers,
+    getSubscribedChannelsData,
+    getUserChannelsubscribersCount,
     toggleSubscription,
+    getChannelSubscribers,
+    checkSubscriptionStatus 
+    
 } from "../controllers/subscription.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
@@ -10,13 +13,22 @@ const router = Router();
 router.use(verifyJWT); // Protect all routes
 
 
-router.get("/u/:subscriberId", getSubscribedChannels);
-// ata user koita subscibe chnnel korsa  
-
-router.post("/c/:channelId", toggleSubscription); 
-// ata dia sucbre kore 
 
 
-router.get("/subscribers/:channelId", getUserChannelSubscribers);
+router.post("/c/:channelId", toggleSubscription);
+
+
+router.get("/u/:subscriberId", getSubscribedChannelsData);
+
+
+router.get("/channel/:channelId/subscribers", getChannelSubscribers);
+
+// user er subscribed channel gulo dekhabe
+router.get("/subscribers/:channelId", getUserChannelsubscribersCount);
+
+
+router.get("/status/:channelId", checkSubscriptionStatus);
 // ata dia subscribe count kore 
+
+
 export default router;

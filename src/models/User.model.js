@@ -67,6 +67,10 @@ social: {
       type: Number,
       default: 0,
     },
+      subscribersCount: {
+    type: Number,
+    default: 0,
+  },
     refreshToken: {
       type: String,
     },
@@ -111,5 +115,6 @@ UserSchema.methods.generateRefreshToken = function () {
     }
   );
 };
+
 
 export const User = mongoose.model("User", UserSchema);
