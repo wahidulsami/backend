@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://backend-b1hu.vercel.app",
+    origin: "https://backend-pgvw.onrender.com",
     credentials: true,
   })
 );
