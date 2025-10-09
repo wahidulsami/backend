@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 import { Like } from "../models/Like.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+
 import { Video } from "../models/Video.model.js";
 
 
@@ -48,7 +47,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     liked = true;
   }
 
-  // Safety check (never negative)
+
   if (updated && updated.likesCount < 0) {
     updated.likesCount = 0;
     await updated.save();
