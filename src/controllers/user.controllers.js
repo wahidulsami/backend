@@ -1,8 +1,6 @@
 import { User } from "../models/User.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
 import { uploadCloudinary } from "../utils/cloudnary.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import transporter from "../config/nodemailer.js";
@@ -358,7 +356,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
   } catch (error) {
-    return next(new ApiError(401, error?.message || "Invalid refresh token"));
+    return res.status(401).json({success:false , message:"Invalid refresh token"})
   }
 });
 
