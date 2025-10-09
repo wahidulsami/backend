@@ -492,74 +492,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 // todo end
 
-const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const { username } = req.params;
-  if (!username) {
-    return res
-      .status(400)
-      .json({ success: false, message: "username is required" });
-  }
-  const channel = await User.aggregate([
-    {
-      $match: {
-        username: username.trim().toLowerCase(),
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "channel",
-        as: "subscribers",
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "channel",
-        as: "subscribedTo",
-      },
-    },
-    {
-      $addFields: {
-        SubscriberCount: { $size: "$subscribers" },
-        channelSubscribedToCount: { $size: "$subscribedTo" },
-      },
-      isSubscribed: {
-        $cond: {
-          if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-          then: true,
-          else: false,
-        },
-      },
-    },
-    {
-      $project: {
-        fullname: 1,
-        username: 1,
-        SubscriberCount: 1,
-        channelSubscribedToCount: 1,
-        isSubscribed: 1,
-        avatar: 1,
-        coverImage: 1,
-      },
-    },
-  ]);
-  console.log(channel);
 
-  if (!channel?.length) {
-    return res
-      .status(404)
-      .json({ success: false, message: "channel not found" });
-  }
-
-  return res.status(200).json({
-    success: true,
-    data: channel[0],
-    message: "channel fetched successfully",
-  });
-});
 
 const getWatchhistory = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
@@ -623,7 +556,6 @@ export {
   updateAccoutDetails,
   updateUserAvatar,
   updateUserCoverImage,
-  getUserChannelProfile,
   getWatchhistory,
   resetPasswordOTP,
   verifyOTP,

@@ -9,7 +9,6 @@ import {
   updateAccoutDetails,
   updateUserAvatar,
   updateUserCoverImage,
-  getUserChannelProfile,
   getWatchhistory,
   resetPasswordOTP,
   verifyOTP,
@@ -46,7 +45,6 @@ router
 router
   .route("/update-cover")
   .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
-router.route("/channel/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/watch-history").get(verifyJWT, getWatchhistory);
 
 export default router;
