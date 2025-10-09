@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://backend-b1hu.vercel.app",
     credentials: true,
   })
 );
