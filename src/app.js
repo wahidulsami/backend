@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://backend-pgvw.onrender.com",
+    origin: "https://totube.vercel.app"
     credentials: true,
   })
 );
