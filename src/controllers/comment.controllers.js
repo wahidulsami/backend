@@ -9,79 +9,109 @@ const getVideoComments = asyncHandler(async (req , res) => {
     const {page = 1 , limit =10} = req.query
 
     if(!videoId ||  !mongoose.Types.ObjectId.isValid(videoId) ){
-        throw new ApiError( 400 , "invalid  video Id")
+       return res.status(400).json({ success: false, message: "Invalid video ID" });
     }
 
     const commentQuery = Comment.aggregate([
+  {
+        $match: { video: videoId }
+  },
+  { $sort: { createdAt: -1 } },
+  {
+    $lookup: {
+      from: "users",
+      localField: "owner",
+      foreignField: "_id",
+      as: "owner",
+      pipeline: [{ $project: { username: 1, avatar: 1, _id: 1 } }]
+    }
+  },
+  { $unwind: "$owner" },
+  {
+    $lookup: {
+      from: "comments",
+      localField: "_id",
+      foreignField: "parentComment",
+      as: "replies",
+      pipeline: [
+        { $sort: { createdAt: 1 } },
         {
-            $match: { video: videoId }
-        },{
-            $sort: {createdAt: -1}
+          $lookup: {
+            from: "users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "owner",
+            pipeline: [{ $project: { username: 1, avatar: 1, _id: 1 } }]
+          }
         },
-        {
-            $lookup:{
-                from:"users",
-                localField:"owner",
-                foreignField:"_id",
-                as:"owner",
-                pipeline:[
-                    {$project:
-                         {username: 1 , avatar:1 , _id:1}
-                    }
-                ]
-            }
-        },{
-            $unwind:'$owner'
-        }
-    ])
+        { $unwind: "$owner" }
+      ]
+    }
+  }
+]);
+
     const paginate = await Comment.aggregatePaginate(commentQuery ,{
         page: parseInt(page),
         limit: parseInt(limit)
     })
 return res
 .status(200)
-.json(new ApiResponse 
-    (200 ,
-        paginate,
-        "Comments fetched successfully"
-    )
-)
+.json({
+    success:true,
+    ...paginate,
+      message: "Comments (with replies) fetched successfully",
+})
+
 
 
 })
 
-const addComment = asyncHandler(async (req , res)=> {
-    const {videoId} = req.params;
-    const {content} = req.body;
+const addComment = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const { content, parentCommentId } = req.body;
 
-    if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
-        throw new ApiError(400 , "Invalid video ID" )
-    }
-    if(!content){
-        throw new ApiError(200 , "all feild is required")
-    }
+  if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
+    return res.status(400).json({ success: false, message: "Invalid video ID" });
+  }
+  if (!content?.trim()) {
+    return res.status(400).json({ success: false, message: "Content is required" });
+  }
 
-    const newComment = await Comment.create(
-       { content,
-        video:videoId ,
-        owner:req.user._id
+  
+  let parentComment = null;
+  if (parentCommentId) {
+    if (!mongoose.Types.ObjectId.isValid(parentCommentId)) {
+      return res.status(400).json({ success: false, message: "Invalid parent comment ID" });
     }
-    )
-    if (!newComment) {
-    throw new ApiError(200 , "failed creted comment" );
-    }
+    parentComment = parentCommentId;
+  }
 
-    return res 
-    .status(200)
-    .json(new ApiResponse(200, newComment , "NEW Comment fetched successfully" ))
-})
+  const newComment = await Comment.create({
+    content,
+    video: videoId,
+    owner: req.user._id,
+    parentComment,
+  });
+
+  const populatedComment = await Comment.findById(newComment._id)
+    .populate("owner", "username avatar _id");
+
+  return res.status(200).json({
+    success: true,
+    data: populatedComment,
+    message: parentComment
+      ? "Reply added successfully"
+      : "Comment created successfully",
+  });
+});
+
 
 const  updateComment = asyncHandler(async (req , res) => {
     const {commentId} = req.params
     const {content} = req.body
 
     if (!commentId || !mongoose.Types.ObjectId.isValid(commentId)) {
-        throw new ApiError(400, "Invalid coment Id")
+        return res.status(400).json({ success: false, message: "Invalid comment ID" });
     }
 
     const existComment = await Comment.findById(commentId)
@@ -90,10 +120,7 @@ const  updateComment = asyncHandler(async (req , res) => {
         throw new ApiError(404 , "commnet not found")
     }
     if(existComment.owner.toString() !== req.user._id.toString()){
-        throw new ApiError(
-            403, 
-            "you are not authrozied "
-        )
+      return res.status(403).json({ success: false, message: "You are not authorized to update this comment" });
     }
 
     const newComment = await Comment.findByIdAndUpdate(
@@ -102,42 +129,46 @@ const  updateComment = asyncHandler(async (req , res) => {
         {new : true}
     )
     if (!newComment) {
-        throw new ApiError(500 , "new comment creted failed ")
+        return res.status(500).json({ success: false, message: "Failed to update comment" });
     }
 
     return res 
     .status(200)
-    .json( new ApiResponse(200 ,"updete comment successfully" , newComment ))
+    .json( {
+        success:true,
+        data:newComment,
+        message:"comment updated successfully"
+    })
 
 })
 
 const deleteComments = asyncHandler(async (req , res )=> {
     const {commentId} = req.params;
     if (!commentId || !mongoose.Types.ObjectId.isValid(commentId)) {
-        throw new ApiError(404 ,"Invalid comment id " )
+        return res.status(400).json({ success: false, message: "Invalid comment ID" });
     }
 
     const existComment = await Comment.findById(commentId)
 
     if (!existComment) {
-        throw new ApiError(404 , 
-            "comment not found"
-        )
+    return res.status(404).json({ success: false, message: "Comment not found" });
     }
 
     if (existComment.owner.toString() !== req.user._id.toString()) {
-        throw new ApiError(403, 
-            "you are not authorized to delete this comment"
-        )
+        return res.status(403).json({ success: false, message: "You are not authorized to delete this comment" });
     }
   
     const deleteComment = await  Comment.findByIdAndDelete(commentId)
       if (!deleteComment) {
-    throw new ApiError(400, "comment deleted unscessfully");
+        return res.status(500).json({ success: false, message: "Failed to delete comment" });
   }
   return res
     .status(200)
-    .json(new ApiResponse(200, "comment deleted successfully", {}));
+    .json({
+        success:true,
+        data:deleteComment,
+        message:"comment deleted successfully"
+    })
 })
 
 

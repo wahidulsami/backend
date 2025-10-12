@@ -10,10 +10,16 @@ const commentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  owner: {
-    type: Schema.Types.ObjectId,
-    ref: "Video" // Confirm if you want to reference Video or User here
-  }
+ owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+      parentComment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Comment",
+    default: null, 
+  },
 }, { timestamps: true });
 
 commentSchema.plugin(mongooseAggregatePaginate);
