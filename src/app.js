@@ -6,7 +6,11 @@ const app = express();
 
 app.use(
   cors({
+<<<<<<< HEAD
     origin: "http://localhost:5173",
+=======
+    origin: "https://totube.vercel.app",
+>>>>>>> 585949aea27dc639eb5ed40840e519ff81f802e1
     credentials: true,
   })
 );
