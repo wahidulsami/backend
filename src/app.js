@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://totube.vercel.app"
+    origin: "https://totube.vercel.app",
     credentials: true,
   })
 );
