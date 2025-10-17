@@ -106,7 +106,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
       await Like.deleteOne({ _id: existingLike._id }, { session });
       updated = await Comment.findByIdAndUpdate(
         commentId,
-        { $inc: { likesCount: 1 } },
+        { $inc: { likesCount: -1 } },
         { new: true, session, projection: { likesCount: 1 } }
       );
       liked = true;
