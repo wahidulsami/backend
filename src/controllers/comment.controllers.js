@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 import { Comment } from "../models/Comment.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+
 
 const getVideoComments = asyncHandler(async (req , res) => {
     const {videoId} = req.params
@@ -62,8 +61,6 @@ return res
       message: "Comments (with replies) fetched successfully",
 })
 
-
-
 })
 
 const addComment = asyncHandler(async (req, res) => {
@@ -117,7 +114,10 @@ const  updateComment = asyncHandler(async (req , res) => {
     const existComment = await Comment.findById(commentId)
     
     if (!existComment) {
-        throw new ApiError(404 , "commnet not found")
+        return res.status(404).json({
+            success:false,
+            message:"comment not found"
+        })
     }
     if(existComment.owner.toString() !== req.user._id.toString()){
       return res.status(403).json({ success: false, message: "You are not authorized to update this comment" });

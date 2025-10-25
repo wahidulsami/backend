@@ -102,23 +102,26 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     }).session(session);
     let liked, updated;
 
-    if (existingLike) {
-      await Like.deleteOne({ _id: existingLike._id }, { session });
-      updated = await Comment.findByIdAndUpdate(
-        commentId,
-        { $inc: { likesCount: -1 } },
-        { new: true, session, projection: { likesCount: 1 } }
-      );
-      liked = true;
-    } else {
-      await Like.create([{ comment: commentId, likedBy: userId }], { session });
-      updated = await Comment.findByIdAndUpdate(
-        commentId,
-        { $inc: { likesCount: 1 } },
-        { new: true, session, projection: { likesCount: 1 } }
-      );
-      liked = true;
-    }
+  if (existingLike) {
+  // Unlike
+  await Like.deleteOne({ _id: existingLike._id }, { session });
+  updated = await Comment.findByIdAndUpdate(
+    commentId,
+    { $inc: { likesCount: -1 } },
+    { new: true, session, projection: { likesCount: 1 } }
+  );
+  liked = false; // <- this should be false
+} else {
+  // Like
+  await Like.create([{ comment: commentId, likedBy: userId }], { session });
+  updated = await Comment.findByIdAndUpdate(
+    commentId,
+    { $inc: { likesCount: 1 } },
+    { new: true, session, projection: { likesCount: 1 } }
+  );
+  liked = true;
+}
+
 
     if (updated.likesCount < 0) {
       updated.likesCount = 0;
@@ -215,14 +218,15 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
       },
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error("Tweet like toggle failed:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-    });
-  }
+  await session.abortTransaction();
+  session.endSession();
+  console.error("Comment like toggle failed:", error); // <- keep this
+  return res.status(500).json({
+    success: false,
+    message: error.message || "Something went wrong",
+  });
+}
+
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
@@ -261,3 +265,5 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 });
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
+
+
