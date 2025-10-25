@@ -182,12 +182,12 @@ const logoutUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-const cookieOptions = {
-  httpOnly: true,                
-  secure: true,                  
-  sameSite: "None",                
-  maxAge: 24 * 60 * 60 * 1000,    
-};
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+  };
+
 
   return res
     .status(200)
