@@ -13,6 +13,7 @@ const uploadCloudinary = async (localFilePath) => {
 
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
+       secure: true
     });
 
     // Delete local file safely
