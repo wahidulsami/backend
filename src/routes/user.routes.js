@@ -31,6 +31,7 @@ router.route("/login").post(loginUser);
 
 
 // seccure route
+
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/refresh-token").post(refreshAccessToken);
 router.route("/reset-password-otp").post(resetPasswordOTP);
