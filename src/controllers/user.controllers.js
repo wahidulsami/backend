@@ -77,8 +77,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     fullname,
-    avatar: avatar ? avatar.url : "",
-    coverImage: coverImage ? coverImage.url : "",
+   avatar: avatar ? avatar.secure_url : "",     
+  coverImage: coverImage ? coverImage.secure_url : "",  
     email,
     password,
     username: username.trim().toLowerCase(),
@@ -450,7 +450,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     req.user?._id,
     {
       $set: {
-        avatar: avatar.url,
+        avatar: avatar.secure_url,
       },
     },
     { new: true }
@@ -485,7 +485,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     req.user?._id,
     {
       $set: {
-        coverImage: coverImage.url,
+        coverImage: coverImage.secure_url,
       },
     },
     { new: true }

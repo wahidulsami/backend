@@ -72,8 +72,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-console.log(req.body);  // title, description
-console.log(req.files); // video, thumbnail
+
 
   if (!title || !description) {
       return res.status(400).json({
@@ -122,8 +121,8 @@ console.log(req.files); // video, thumbnail
   const video = await Video.create({
     title,
     description,
-    videoFile: uploadVideo.url,
-    thumbnail: uploadThumbnail.url,
+    videoFile: uploadVideo.secure_url,
+    thumbnail: uploadThumbnail.secure_url,
     owner: user._id,
     duration: duration_video,
     isPublished: false,
