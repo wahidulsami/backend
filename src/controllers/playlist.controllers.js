@@ -1,6 +1,4 @@
 import { Playlist } from "../models/Playlist.model.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
 
@@ -69,7 +67,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Playlists fetched successfully",
-    playlists,
+    data: playlists,
   });
 });
 
@@ -96,7 +94,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Playlist fetched successfully",
-    playlist,
+   data: playlist,
   });
 });
 
@@ -130,7 +128,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     .json({
       success:true,
         message:"add video playlist fethed successfully",
-        addvideoPlaylist
+       data: addvideoPlaylist
       }
     );
 });
@@ -168,7 +166,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Video removed from playlist successfully",
-    playlist: updatedPlaylist,
+    data: updatedPlaylist,
   });
 });
 
@@ -245,7 +243,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Playlist updated successfully",
-    playlist: updatedPlaylist,
+    data: updatedPlaylist,
   });
 });
 
