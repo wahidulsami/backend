@@ -48,31 +48,29 @@ const registerUser = asyncHandler(async (req, res) => {
       });
   }
 
-  const avatarLocalpath = req.files?.avatar?.[0]?.path;
-  const coverImageLocalpath = req.files?.coverImage?.[0]?.path;
+ const avatarLocalpath = req.files?.avatar?.[0]?.path;
+const coverImageLocalpath = req.files?.coverImage?.[0]?.path;
 
-  let avatar = null;
-  if (avatarLocalpath) {
+let avatar = null;
+if (avatarLocalpath) {
+  try {
     avatar = await uploadCloudinary(avatarLocalpath);
-    if (!avatar) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to upload avatar to Cloudinary",
-      });
-    }
+  } catch (err) {
+    console.error("Avatar upload failed:", err);
+    return res.status(500).json({ success: false, message: "Failed to upload avatar" });
   }
+}
 
-  // Upload cover image if provided
-  let coverImage = null;
-  if (coverImageLocalpath) {
+let coverImage = null;
+if (coverImageLocalpath) {
+  try {
     coverImage = await uploadCloudinary(coverImageLocalpath);
-    if (!coverImage) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to upload cover to Cloudinary",
-      });
-    }
+  } catch (err) {
+    console.error("Cover upload failed:", err);
+    return res.status(500).json({ success: false, message: "Failed to upload cover" });
   }
+}
+
 
   const user = await User.create({
     fullname,
