@@ -26,7 +26,8 @@ res.status(error.statusCode || 500).json({
 
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, username, password } = req.body;
-
+  console.log("Files received:", req.files); // Multer দিয়ে আসা ফাইল
+  console.log("Body received:", req.body);   // Form data (fullname, email, etc.)
   if (
     [fullname, email, username, password].some((field) => field?.trim() === "")
   ) {
@@ -48,29 +49,31 @@ const registerUser = asyncHandler(async (req, res) => {
       });
   }
 
- const avatarLocalpath = req.files?.avatar?.[0]?.path;
-const coverImageLocalpath = req.files?.coverImage?.[0]?.path;
+  const avatarLocalpath = req.files?.avatar?.[0]?.path;
+  const coverImageLocalpath = req.files?.coverImage?.[0]?.path;
 
-let avatar = null;
-if (avatarLocalpath) {
-  try {
+  let avatar = null;
+  if (avatarLocalpath) {
     avatar = await uploadCloudinary(avatarLocalpath);
-  } catch (err) {
-    console.error("Avatar upload failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to upload avatar" });
+    if (!avatar) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload avatar to Cloudinary",
+      });
+    }
   }
-}
 
-let coverImage = null;
-if (coverImageLocalpath) {
-  try {
+  // Upload cover image if provided
+  let coverImage = null;
+  if (coverImageLocalpath) {
     coverImage = await uploadCloudinary(coverImageLocalpath);
-  } catch (err) {
-    console.error("Cover upload failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to upload cover" });
+    if (!coverImage) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload cover to Cloudinary",
+      });
+    }
   }
-}
-
 
   const user = await User.create({
     fullname,
@@ -90,7 +93,6 @@ const cookieOptions = {
   sameSite: "None",                
   maxAge: 24 * 60 * 60 * 1000,    
 };
-
   const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(
     user._id
   );
@@ -104,7 +106,7 @@ const cookieOptions = {
 
   return res
     .status(201)
-    .cookie("accessToken", accessToken,cookieOptions )
+    .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
     .json({
       success: true,
@@ -116,6 +118,7 @@ const cookieOptions = {
       },
     });
 });
+
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
