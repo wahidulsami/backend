@@ -2,19 +2,18 @@ import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/Video.model.js";
 import { User } from "../models/User.model.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/ApiError.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
   const channelId = req.user?._id;
   if (!channelId) {
-    throw new ApiError(401, "Unauthorized: User not found");
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: User not found",
+    });
   }
 
   const channelStats = await User.aggregate([
-    {
-      $match: { _id: new mongoose.Types.ObjectId(channelId) },
-    },
+    { $match: { _id: new mongoose.Types.ObjectId(channelId) } },
     {
       $lookup: {
         from: "videos",
@@ -38,7 +37,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
         from: "subscriptions",
         localField: "_id",
         foreignField: "channel",
-        as: "likes",
+        as: "subscribers",
       },
     },
     {
@@ -69,30 +68,43 @@ const getChannelStats = asyncHandler(async (req, res) => {
   ]);
 
   if (!channelStats.length) {
-    throw new ApiError(404, " channel not found");
+    return res.status(404).json({
+      success: false,
+      message: "Channel not found",
+    });
   }
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        "Channel stats fetched successfully",
-        channelStats[0]
-      )
-    );
+
+  return res.status(200).json({
+    success: true,
+    message: "Channel stats fetched successfully",
+    data: channelStats[0],
+  });
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
   const channelId = req.user?._id;
   if (!channelId) {
-    throw new ApiError(401, "Unauthorized: User not found");
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: User not found",
+    });
   }
 
   const videos = await Video.find({ owner: channelId }).sort({ createdAt: -1 });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, "Channel videos fetched successfully", videos));
+  if (!videos.length) {
+    return res.status(404).json({
+      success: false,
+      message: "No videos found",
+      data: [],
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Channel videos fetched successfully",
+    data: videos,
+  });
 });
 
 export { getChannelStats, getChannelVideos };
