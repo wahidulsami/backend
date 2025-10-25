@@ -75,19 +75,15 @@ const registerUser = asyncHandler(async (req, res) => {
     }
   }
 
-  const user = await User.create({
+const user = await User.create({
     fullname,
-<<<<<<< HEAD
-   avatar: avatar ? avatar.secure_url : "",     
-  coverImage: coverImage ? coverImage.secure_url : "",  
-=======
-  avatar: avatar ? avatar.secure_url : "",      
-  coverImage: coverImage ? coverImage.secure_url : "", 
->>>>>>> 2565efffd62e3ae5ca4d3a53ddddcbbaabbc8f47
+    avatar: avatar ? avatar.secure_url : "",
+    coverImage: coverImage ? coverImage.secure_url : "",
     email,
     password,
     username: username.trim().toLowerCase(),
-  });
+});
+
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
