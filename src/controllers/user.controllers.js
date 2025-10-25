@@ -84,10 +84,13 @@ if (coverImageLocalpath) {
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
-  const cokiesOptions = {
-    httpOnly: true,
-    secure: false,
-  };
+const cookieOptions = {
+  httpOnly: true,                
+  secure: true,                  
+  sameSite: "None",                
+  maxAge: 24 * 60 * 60 * 1000,    
+};
+
   const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(
     user._id
   );
@@ -101,8 +104,8 @@ if (coverImageLocalpath) {
 
   return res
     .status(201)
-    .cookie("accessToken", accessToken, cokiesOptions)
-    .cookie("refreshToken", refreshToken, cokiesOptions)
+    .cookie("accessToken", accessToken,cookieOptions )
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json({
       success: true,
       message: "Account created successfully 🎉",
@@ -145,15 +148,17 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  const cokiesOptions = {
-    httpOnly: true,
-    secure: false,
-  };
+const cookieOptions = {
+  httpOnly: true,                
+  secure: true,                  
+  sameSite: "None",                
+  maxAge: 24 * 60 * 60 * 1000,    
+};
 
   return res
     .status(201)
-    .cookie("accessToken", accessToken, cokiesOptions)
-    .cookie("refreshToken", refreshToken, cokiesOptions)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json({
       success: true,
       message: " logged in successfully",
@@ -177,15 +182,17 @@ const logoutUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-  const cokiesOptions = {
-    httpOnly: true,
-    secure: false,
-  };
+const cookieOptions = {
+  httpOnly: true,                
+  secure: true,                  
+  sameSite: "None",                
+  maxAge: 24 * 60 * 60 * 1000,    
+};
 
   return res
     .status(200)
-    .clearCookie("accessToken", cokiesOptions)
-    .clearCookie("refreshToken", cokiesOptions)
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
     .json({
       success: true,
 
@@ -333,9 +340,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
  
   const cokiesOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // true in prod
-    sameSite: "Strict",
+  httpOnly: true,                  // JS can't access the cookie
+  secure: true,                    // must be true in production (HTTPS)
+  sameSite: "None",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 
