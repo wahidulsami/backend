@@ -121,8 +121,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const video = await Video.create({
     title,
     description,
-    videoFile: uploadVideo.secure_url,
-    thumbnail: uploadThumbnail.secure_url,
+    videoFile: uploadVideo ? uploadVideo.secure_url : "",
+    thumbnail: uploadThumbnail ? uploadThumbnail.secure_url : "",
     owner: user._id,
     duration: duration_video,
     isPublished: false,
